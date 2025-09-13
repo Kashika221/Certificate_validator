@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Certificate Verification System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            font-weight: 300;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .form-container {
+            padding: 40px;
+        }
+
+        .upload-section {
+            margin-bottom: 30px;
+        }
+
+        .upload-section h3 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+        }
+
+        .file-upload {
+            position: relative;
+            display: inline-block;
+            width: 100%;
+            margin-bottom: 20px;
+        }
+
+        .file-upload input[type="file"] {
+            position: absolute;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+
+        .file-upload-label {
+            display: block;
+            padding: 20px;
+            border: 2px dashed #ddd;
+            border-radius: 8px;
+            text-align: center;
+            background: #fafafa;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .file-upload-label:hover {
+            border-color: #4CAF50;
+            background: #f0f8f0;
+        }
+
+        .file-upload.has-file .file-upload-label {
+            border-color: #4CAF50;
+            background: #f0f8f0;
+        }
+
+        .file-info {
+            margin-top: 10px;
+            padding: 10px;
+            background: #e8f5e8;
+            border-radius: 5px;
+            font-size: 0.9rem;
+            color: #2e7d32;
+            display: none;
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 20px;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(76, 175, 80, 0.3);
+        }
+
+        .submit-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .loading-spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #4CAF50;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .result {
+            margin-top: 30px;
+            padding: 20px;
+            border-radius: 8px;
+            display: none;
+        }
+
+        .result.success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+
+        .result.error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+
+        .result.warning {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+        }
+
+        .result-header {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+        }
+
+        .result-details {
+            background: rgba(255,255,255,0.7);
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 15px;
+        }
+
+        .result-details h4 {
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .data-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .data-row:last-child {
+            border-bottom: none;
+        }
+
+        .data-label {
+            font-weight: 500;
+            color: #666;
+        }
+
+        .data-value {
+            color: #333;
+        }
+
+        .supported-formats {
+            margin-top: 15px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 5px;
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        .supported-formats strong {
+            color: #333;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                margin: 10px;
+            }
+            
+            .form-container {
+                padding: 20px;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Certificate Verification System</h1>
+            <p>Upload your certificates to verify authenticity and extract student data</p>
+        </div>
+        
+        <div class="form-container">
+            <form id="verificationForm" enctype="multipart/form-data">
+                <div class="upload-section">
+                    <h3>Base Certificate Template</h3>
+                    <div class="file-upload" id="baseUpload">
+                        <input type="file" name="base_certificate" id="baseCertificate" accept=".jpg,.jpeg,.png,.pdf,.docx,.bmp,.tiff,.gif" required>
+                        <label for="baseCertificate" class="file-upload-label">
+                            <div>
+                                📄 Click to select base certificate template<br>
+                                <small>This is the reference certificate format</small>
+                            </div>
+                        </label>
+                        <div class="file-info" id="baseFileInfo"></div>
+                    </div>
+                </div>
+
+                <div class="upload-section">
+                    <h3>Certificate to Verify</h3>
+                    <div class="file-upload" id="certUpload">
+                        <input type="file" name="certificate" id="certificate" accept=".jpg,.jpeg,.png,.pdf,.docx,.bmp,.tiff,.gif" required>
+                        <label for="certificate" class="file-upload-label">
+                            <div>
+                                🎓 Click to select certificate to verify<br>
+                                <small>This is the certificate you want to authenticate</small>
+                            </div>
+                        </label>
+                        <div class="file-info" id="certFileInfo"></div>
+                    </div>
+                </div>
+
+                <button type="submit" class="submit-btn" id="submitBtn">
+                    Verify Certificate
+                </button>
+            </form>
+
+            <div class="loading" id="loading">
+                <div class="loading-spinner"></div>
+                <p>Verifying certificate... This may take a few moments.</p>
+            </div>
+
+            <div class="result" id="result">
+                <div class="result-header" id="resultHeader"></div>
+                <div id="resultMessage"></div>
+                <div class="result-details" id="resultDetails"></div>
+            </div>
+
+            <div class="supported-formats">
+                <strong>Supported formats:</strong> JPG, PNG, PDF, DOCX, BMP, TIFF, GIF<br>
+                <strong>Maximum file size:</strong> 16MB per file
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // File upload handlers
+        function setupFileUpload(inputId, uploadId, infoId) {
+            const input = document.getElementById(inputId);
+            const upload = document.getElementById(uploadId);
+            const info = document.getElementById(infoId);
+
+            input.addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    upload.classList.add('has-file');
+                    info.style.display = 'block';
+                    info.innerHTML = `
+                        <strong>Selected:</strong> ${file.name}<br>
+                        <strong>Size:</strong> ${(file.size / 1024 / 1024).toFixed(2)} MB<br>
+                        <strong>Type:</strong> ${file.type || 'Unknown'}
+                    `;
+                } else {
+                    upload.classList.remove('has-file');
+                    info.style.display = 'none';
+                }
+            });
+        }
+
+        setupFileUpload('baseCertificate', 'baseUpload', 'baseFileInfo');
+        setupFileUpload('certificate', 'certUpload', 'certFileInfo');
+
+        // Form submission
+        document.getElementById('verificationForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const submitBtn = document.getElementById('submitBtn');
+            const loading = document.getElementById('loading');
+            const result = document.getElementById('result');
+            const resultHeader = document.getElementById('resultHeader');
+            const resultMessage = document.getElementById('resultMessage');
+            const resultDetails = document.getElementById('resultDetails');
+
+            // Show loading state
+            submitBtn.disabled = true;
+            loading.style.display = 'block';
+            result.style.display = 'none';
+
+            try {
+                const formData = new FormData(this);
+                
+                const response = await fetch('/verify', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                // Hide loading
+                loading.style.display = 'none';
+                result.style.display = 'block';
+
+                if (data.success && data.verified) {
+                    result.className = 'result success';
+                    resultHeader.textContent = '✅ Certificate Verified Successfully';
+                } else if (data.success && !data.verified) {
+                    result.className = 'result warning';
+                    resultHeader.textContent = '⚠️ Certificate Format Valid but Not Verified';
+                } else {
+                    result.className = 'result error';
+                    resultHeader.textContent = '❌ Certificate Verification Failed';
+                }
+
+                resultMessage.textContent = data.message;
+
+                // Show details
+                let detailsHTML = '';
+                
+                if (data.similarity_score !== undefined) {
+                    detailsHTML += `
+                        <h4>Verification Details</h4>
+                        <div class="data-row">
+                            <span class="data-label">Similarity Score:</span>
+                            <span class="data-value">${(data.similarity_score * 100).toFixed(2)}%</span>
+                        </div>
+                    `;
+                }
+
+                if (data.student_data) {
+                    detailsHTML += `
+                        <h4>Extracted Student Data</h4>
+                        <div class="data-row">
+                            <span class="data-label">Student Name:</span>
+                            <span class="data-value">${data.student_data.student_name}</span>
+                        </div>
+                        <div class="data-row">
+                            <span class="data-label">Enrollment Number:</span>
+                            <span class="data-value">${data.student_data.enrollment_number}</span>
+                        </div>
+                        <div class="data-row">
+                            <span class="data-label">CGPA:</span>
+                            <span class="data-value">${data.student_data.cgpa}</span>
+                        </div>
+                    `;
+                }
+
+                if (data.database_record) {
+                    detailsHTML += `
+                        <h4>Database Record Match</h4>
+                        <div class="data-row">
+                            <span class="data-label">Database Name:</span>
+                            <span class="data-value">${data.database_record.name || 'N/A'}</span>
+                        </div>
+                        <div class="data-row">
+                            <span class="data-label">Database Enrollment:</span>
+                            <span class="data-value">${data.database_record.enrollmentNo || 'N/A'}</span>
+                        </div>
+                        <div class="data-row">
+                            <span class="data-label">Database CGPA:</span>
+                            <span class="data-value">${data.database_record.cgpa || 'N/A'}</span>
+                        </div>
+                    `;
+                }
+
+                if (data.errors && data.errors.length > 0) {
+                    detailsHTML += `
+                        <h4>Errors</h4>
+                        ${data.errors.map(error => `<div class="data-row"><span class="data-value">${error}</span></div>`).join('')}
+                    `;
+                }
+
+                resultDetails.innerHTML = detailsHTML;
+
+            } catch (error) {
+                loading.style.display = 'none';
+                result.style.display = 'block';
+                result.className = 'result error';
+                resultHeader.textContent = '❌ Network Error';
+                resultMessage.textContent = 'Failed to connect to the server. Please try again.';
+                resultDetails.innerHTML = '';
+            }
+
+            submitBtn.disabled = false;
+        });
+
+        // Reset form
+        function resetForm() {
+            document.getElementById('verificationForm').reset();
+            document.getElementById('baseUpload').classList.remove('has-file');
+            document.getElementById('certUpload').classList.remove('has-file');
+            document.getElementById('baseFileInfo').style.display = 'none';
+            document.getElementById('certFileInfo').style.display = 'none';
+            document.getElementById('result').style.display = 'none';
+        }
+    </script>
+</body>
+</html>
