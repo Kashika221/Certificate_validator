@@ -14,6 +14,7 @@ from docx2pdf import convert
 from skimage.metrics import structural_similarity as ssim
 import cv2
 import numpy as np
+from ultralytics import YOLO
 from pydantic import BaseModel, ValidationError, Field
 from groq import Groq
 from dotenv import load_dotenv
@@ -56,7 +57,7 @@ class CertificateVerifier:
         self.base_certificate_path = None
         
         # Configuration
-        self.SSIM_THRESHOLD = float(os.getenv("SSIM_THRESHOLD", "0.75"))
+        self.SSIM_THRESHOLD = float(os.getenv("SSIM_THRESHOLD", "0.1"))
         self.MAX_FILE_SIZE = int(os.getenv("MAX_FILE_SIZE", "10485760"))  # 10MB
         self.SUPPORTED_FORMATS = {'.jpg', '.jpeg', '.png', '.pdf', '.docx', '.bmp', '.tiff', '.gif'}
         
@@ -232,50 +233,26 @@ class CertificateVerifier:
             
             if not os.path.exists(image_path):
                 raise CertificateVerificationError(f"Image file not found: {image_path}")
-            
-            results = self.ocr_reader.readtext(image_path)
+
+            img = cv2.imread(image_path)
+            results = self.ocr_reader.readtext(img)
             
             if not results:
                 logger.warning("No text detected in image")
                 return ""
             
             extracted_text = ""
-            for (bbox, text, confidence) in results:
-                if confidence > 0.5:  # Filter low-confidence text
+            for bbox, text, confidence in results:
+                if confidence > 0.5:
                     logger.debug(f"Detected text: {text} (Confidence: {confidence:.2f})")
                     extracted_text += " " + text.strip()
             
             logger.info(f"Text extraction completed. Length: {len(extracted_text)} characters")
             return extracted_text.strip()
-            
+        
         except Exception as e:
             logger.error(f"Text extraction failed: {str(e)}")
             raise CertificateVerificationError(f"Failed to extract text: {str(e)}")
-    
-    def calculate_similarity(self, image1_path: str, image2_path: str) -> float:
-        """Calculate structural similarity between two images"""
-        try:
-            logger.info(f"Calculating similarity between {image1_path} and {image2_path}")
-            
-            # Load images in grayscale
-            img1 = cv2.imread(image1_path, cv2.IMREAD_GRAYSCALE)
-            img2 = cv2.imread(image2_path, cv2.IMREAD_GRAYSCALE)
-            img2 = cv2.resize(img2, (img1.shape[1], img1.shape[0]))
-            
-            if img1 is None:
-                raise CertificateVerificationError(f"Cannot load image: {image1_path}")
-            if img2 is None:
-                raise CertificateVerificationError(f"Cannot load image: {image2_path}")
-            
-            # Calculate SSIM
-            score, _ = ssim(img1, img2, full=True)
-            logger.info(f"SSIM score: {score:.4f}")
-            
-            return float(score)
-            
-        except Exception as e:
-            logger.error(f"Similarity calculation failed: {str(e)}")
-            raise CertificateVerificationError(f"Failed to calculate similarity: {str(e)}")
     
     def extract_student_data(self, certificate_text: str) -> Student_Data:
         """Extract student data using Groq API with error handling"""
@@ -388,8 +365,8 @@ class CertificateVerifier:
             base_png = self.convert_to_png(base_certificate_path)
             
             # Calculate similarity
-            similarity_score = self.calculate_similarity(cert_png, base_png)
-            print("IN APP2.PY   \n \n")
+            similarity_score = self.similarity(cert_png, base_png)
+            print("IN Validator.PY   \n \n")
             print(cert_png, " ", base_png)
             result["similarity_score"] = similarity_score
             
@@ -431,6 +408,52 @@ class CertificateVerifier:
             result["errors"].append(f"Unexpected error: {str(e)}")
             result["message"] = "An unexpected error occurred during verification"
             return result
+        
+    def detect_and_crop(self, image_path):
+        """Detect certificate and crop the image, then display it"""
+        model = YOLO("yolo_weights/best.pt")
+        img = cv2.imread(image_path)
+
+        results = model(img)[0]  # run detection
+
+    # Get bounding box (x1, y1, x2, y2)
+        box = results.boxes[0].xyxy[0].cpu().numpy().astype(int)
+        x1, y1, x2, y2 = box
+
+        cropped = img[y1:y2, x1:x2]
+        return cropped
+    
+    def similarity(self, img1, img2):
+        try:
+            logger.info(f"Calculating similarity between {img1} and {img2}")
+
+            cropped_1 = self.detect_and_crop(img1)
+            cropped_2 = self.detect_and_crop(img2)
+
+            if cropped_1 is None:
+                raise CertificateVerificationError(f"Cannot load image: {cropped_1}")
+            if cropped_2 is None:
+                raise CertificateVerificationError(f"Cannot load image: {cropped_2}")
+            
+            img1_gray = cv2.cvtColor(cropped_1, cv2.COLOR_BGR2GRAY)
+            img2_gray = cv2.cvtColor(cropped_2, cv2.COLOR_BGR2GRAY)
+
+            sift = cv2.SIFT_create()
+            kp1, des1 = sift.detectAndCompute(img1_gray, None)
+            kp2, des2 = sift.detectAndCompute(img2_gray, None)
+
+            bf = cv2.BFMatcher()
+            matches = bf.knnMatch(des1, des2, k=2)
+
+            good = [m for m, n in matches if m.distance < 0.75 * n.distance]
+            score = len(good) / len(matches)
+            logger.info(f"Similarity score: {score:.4f}")
+            return score
+        
+        except Exception as e:
+            logger.error(f"Similarity calculation failed: {str(e)}")
+            raise CertificateVerificationError(f"Failed to calculate similarity: {str(e)}")
+
 
 # CLI usage example
 def main():
