@@ -258,7 +258,7 @@
                         <input type="file" name="base_certificate" id="baseCertificate" accept=".jpg,.jpeg,.png,.pdf,.docx,.bmp,.tiff,.gif" required>
                         <label for="baseCertificate" class="file-upload-label">
                             <div>
-                                📄 Click to select base certificate template<br>
+                                Click to select base certificate template<br>
                                 <small>This is the reference certificate format</small>
                             </div>
                         </label>
@@ -272,7 +272,7 @@
                         <input type="file" name="certificate" id="certificate" accept=".jpg,.jpeg,.png,.pdf,.docx,.bmp,.tiff,.gif" required>
                         <label for="certificate" class="file-upload-label">
                             <div>
-                                🎓 Click to select certificate to verify<br>
+                                Click to select certificate to verify<br>
                                 <small>This is the certificate you want to authenticate</small>
                             </div>
                         </label>
@@ -362,13 +362,13 @@
 
                 if (data.success && data.verified) {
                     result.className = 'result success';
-                    resultHeader.textContent = '✅ Certificate Verified Successfully';
+                    resultHeader.textContent = 'Certificate Verified Successfully';
                 } else if (data.success && !data.verified) {
                     result.className = 'result warning';
-                    resultHeader.textContent = '⚠️ Certificate Format Valid but Not Verified';
+                    resultHeader.textContent = 'Certificate Format Valid but Not Verified';
                 } else {
                     result.className = 'result error';
-                    resultHeader.textContent = '❌ Certificate Verification Failed';
+                    resultHeader.textContent = 'Certificate Verification Failed';
                 }
 
                 resultMessage.textContent = data.message;
@@ -435,7 +435,7 @@
                 loading.style.display = 'none';
                 result.style.display = 'block';
                 result.className = 'result error';
-                resultHeader.textContent = '❌ Network Error';
+                resultHeader.textContent = 'Network Error';
                 resultMessage.textContent = 'Failed to connect to the server. Please try again.';
                 resultDetails.innerHTML = '';
             }
