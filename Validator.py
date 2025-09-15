@@ -11,17 +11,13 @@ from pdf2image import convert_from_path
 import easyocr
 from PIL import Image
 from docx2pdf import convert
-from skimage.metrics import structural_similarity as ssim
 import cv2
-import numpy as np
 from ultralytics import YOLO
 from pydantic import BaseModel, ValidationError, Field
 from groq import Groq
 from dotenv import load_dotenv
 from pymongo import MongoClient
 from pymongo.errors import ConnectionFailure, ServerSelectionTimeoutError
-import requests
-from requests.exceptions import RequestException
 
 # Load environment variables
 load_dotenv()
