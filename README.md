@@ -2,6 +2,10 @@
 
 A Flask-based web application designed to upload, process, and verify certificates against a base template. This application accepts image or document files, compares them using a custom validator, and returns a verification status.
 
+### Live Demo
+
+-  https://certificate-validator-326x.onrender.com
+
 ## Features
 
 * **Dual File Upload:** Accepts a "Base Certificate" (template) and a specific "Certificate" for comparison.
